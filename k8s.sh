@@ -22,7 +22,7 @@ function delete_config() {
 }
 
 function select_config() {
-    local files=($(ls ~/.kube))
+    local files=($(ls -p ~/.kube | grep -v /))
     local length=${#files[@]}
     local choice
 
@@ -42,6 +42,7 @@ function select_config() {
         fi
     done
 }
+
 
 function display_help() {
     echo "Usage: k8s [-d|-u|-s|file]"
