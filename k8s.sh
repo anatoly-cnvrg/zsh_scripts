@@ -21,6 +21,38 @@ function delete_config() {
     echo "KUBECONFIG has been unset."
 }
 
+function select_config() {
+    local files=($(ls ~/.kube))
+    local length=${#files[@]}
+    local choice
+
+    if [ $length -eq 0 ]; then
+        echo "No files in ~/.kube"
+        return
+    fi
+
+    echo "Select a file to set as KUBECONFIG:"
+    select choice in "${files[@]}"; do
+        if [[ -n $choice ]]; then
+            export KUBECONFIG=~/.kube/$choice
+            echo "KUBECONFIG set to $choice"
+            break
+        else
+            echo "Invalid choice"
+        fi
+    done
+}
+
+function display_help() {
+    echo "Usage: k8s [-d|-u|-s|file]"
+    echo "Options:"
+    echo "-d      Display the content of the KUBECONFIG file."
+    echo "-u      Unset the KUBECONFIG environment variable."
+    echo "-s      Select a kubeconfig file from the ~/.kube directory."
+    echo "file    Set the KUBECONFIG environment variable to the provided file."
+    echo "-h      Display this help message."
+}
+
 function k8s() {
     case $1 in
     -d)
@@ -37,11 +69,25 @@ function k8s() {
             echo "Invalid option with -u."
         fi
         ;;
+    -s)
+        if [ -z "$2" ]; then
+            select_config
+        else
+            echo "Invalid option with -s."
+        fi
+        ;;  
+    -h)
+        if [ -z "$2" ]; then
+            display_help
+        else
+            echo "Invalid option with -h."
+        fi
+        ;;
     "")
         if [ -n "$KUBECONFIG" ]; then
             echo $KUBECONFIG
         else
-            echo "KUBECONFIG is not set."
+            select_config
         fi
         ;;
     *)
