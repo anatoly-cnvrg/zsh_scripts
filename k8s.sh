@@ -45,13 +45,37 @@ function select_config() {
 
 
 function display_help() {
-    echo "Usage: k8s [-d|-u|-s|file]"
+    echo "Usage: k8s [-d|-u|-s|-r|file]"
     echo "Options:"
     echo "-d      Display the content of the KUBECONFIG file."
     echo "-u      Unset the KUBECONFIG environment variable."
     echo "-s      Select a kubeconfig file from the ~/.kube directory."
+    echo "-r      Select a kubeconfig file from the ~/.kube directory and run k9s with it. Does not change KUBECONFIG."
     echo "file    Set the KUBECONFIG environment variable to the provided file."
     echo "-h      Display this help message."
+}
+
+
+function select_and_run_k9s() {
+    local files=($(ls -p ~/.kube | grep -v /))
+    local length=${#files[@]}
+    local choice
+
+    if [ $length -eq 0 ]; then
+        echo "No files in ~/.kube"
+        return
+    fi
+
+    echo "Select a file to run with k9s:"
+    select choice in "${files[@]}"; do
+        if [[ -n $choice ]]; then
+            KUBECONFIG=~/.kube/$choice k9s
+            echo "k9s ran with KUBECONFIG set to $choice"
+            break
+        else
+            echo "Invalid choice"
+        fi
+    done
 }
 
 function k8s() {
@@ -77,6 +101,13 @@ function k8s() {
             echo "Invalid option with -s."
         fi
         ;;  
+    -r)
+        if [ -z "$2" ]; then
+            select_and_run_k9s
+        else
+            echo "Invalid option with -r."
+        fi
+        ;;
     -h)
         if [ -z "$2" ]; then
             display_help
@@ -100,4 +131,3 @@ function k8s() {
         ;;
     esac
 }
-
