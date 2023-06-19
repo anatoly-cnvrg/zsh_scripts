@@ -65,6 +65,12 @@ To set the KUBECONFIG environment variable to a provided file:
 k8s /path/to/your/kubeconfig
 ```
 
+To select a KUBECONFIG file from the ~/.kube directory and run k9s with it without changing the KUBECONFIG environment variable:
+
+```
+k8s -r
+```
+
 For help:
 
 ```bash
