@@ -8,6 +8,14 @@ function display_config() {
     fi
 }
 
+function echo_config_path() {
+    if [ -n "$KUBECONFIG" ] && [ -f "$KUBECONFIG" ]; then
+        echo $KUBECONFIG
+    else
+        echo "KUBECONFIG is not set or the file does not exist."
+    fi
+}
+
 function set_config() {
     if [ -f "$1" ]; then
         export KUBECONFIG=$(realpath $1)
@@ -45,15 +53,18 @@ function select_config() {
 
 
 function display_help() {
-    echo "Usage: k8s [-d|-u|-s|-r|file]"
+    echo "Usage: k8s [-d|-e|-u|-s|-r|file|-h]"
     echo "Options:"
+    echo "        (No option) Same as -r. Select a kubeconfig file from the ~/.kube directory and run k9s with it. Does not change KUBECONFIG."
     echo "-d      Display the content of the KUBECONFIG file."
+    echo "-e      Display the path of the KUBECONFIG file."
     echo "-u      Unset the KUBECONFIG environment variable."
     echo "-s      Select a kubeconfig file from the ~/.kube directory."
     echo "-r      Select a kubeconfig file from the ~/.kube directory and run k9s with it. Does not change KUBECONFIG."
     echo "file    Set the KUBECONFIG environment variable to the provided file."
     echo "-h      Display this help message."
 }
+
 
 
 function select_and_run_k9s() {
@@ -108,6 +119,13 @@ function k8s() {
             echo "Invalid option with -r."
         fi
         ;;
+    -e)
+        if [ -z "$2" ]; then
+            echo_config_path
+        else
+            echo "Invalid option with -r."
+        fi
+        ;;
     -h)
         if [ -z "$2" ]; then
             display_help
@@ -116,11 +134,7 @@ function k8s() {
         fi
         ;;
     "")
-        if [ -n "$KUBECONFIG" ]; then
-            echo $KUBECONFIG
-        else
-            select_config
-        fi
+        select_and_run_k9s
         ;;
     *)
         if [[ $1 == -* ]]; then
