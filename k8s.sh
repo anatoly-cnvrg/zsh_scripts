@@ -53,7 +53,7 @@ function select_config() {
 
 
 function display_help() {
-    echo "Usage: k8s [-d|-e|-u|-s|-r|file|-h]"
+    echo "Usage: k8s [-d|-e|-u|-s|-r|-k|file|-h]"
     echo "Options:"
     echo "        (No option) Same as -r. Select a kubeconfig file from the ~/.kube directory and run k9s with it. Does not change KUBECONFIG."
     echo "-d      Display the content of the KUBECONFIG file."
@@ -61,6 +61,7 @@ function display_help() {
     echo "-u      Unset the KUBECONFIG environment variable."
     echo "-s      Select a kubeconfig file from the ~/.kube directory."
     echo "-r      Select a kubeconfig file from the ~/.kube directory and run k9s with it. Does not change KUBECONFIG."
+    echo "-k      Keep the specified ports open. Ports should be comma-separated and the argument should be enclosed in quotes if more than one. E.g. \"3100,9090\""
     echo "file    Set the KUBECONFIG environment variable to the provided file."
     echo "-h      Display this help message."
 }
@@ -88,6 +89,46 @@ function select_and_run_k9s() {
         fi
     done
 }
+
+
+
+function keep_ports_open() {
+  if [ $# -eq 0 ]; then
+    echo "No ports provided."
+    return 1
+  fi
+
+  ports=(${(s:,:)1})
+
+  # Create an empty array to hold the PIDs of the background processes
+  pids=()
+
+  # Define a signal handler for SIGINT
+  trap 'echo "Stopping processes: ${pids[*]}"; kill "${pids[@]}"; exit' SIGINT
+
+  for port in "${ports[@]}"; do
+    if ! [[ $port =~ ^[0-9]+$ ]] || [ $port -lt 1 ] || [ $port -gt 65535 ]; then
+      echo "Invalid port number: $port"
+      return 1
+    fi
+    {
+      while true; do
+        nc -vz 127.0.0.1 $port || true
+        sleep 10
+      done
+    } & 
+    pids+=("$!")  # Store the PID of the background process
+    echo "Started process with PID $!"
+  done
+
+  # Wait for all background processes to finish
+  wait
+}
+
+
+
+
+
 
 function k8s() {
     case $1 in
@@ -131,6 +172,13 @@ function k8s() {
             display_help
         else
             echo "Invalid option with -h."
+        fi
+        ;;
+     -k)
+        if [ -n "$2" ]; then
+            keep_ports_open "$2"
+        else
+            echo "No ports provided with -k."
         fi
         ;;
     "")
